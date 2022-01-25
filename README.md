@@ -7,7 +7,7 @@ This is a simple POC for an echo service using Thrift. The goal is to validate t
 Using this code requires Go 1.17+ and thrift 1.15 installed in the development machine.
 
 ### Generating Thrift code
-Before attempting to run the code you will need to generate the thrift layers with:
+Before attempting to run the code you will need to generate the thrift layers by running the following command within the project root folder:
 
 ```
 thrift --gen go echoservice.thrift
@@ -24,6 +24,3 @@ And the client with
 ```
 go run ./cmd/client/main.go
 ```
-
-
-
