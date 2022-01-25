@@ -1,4 +1,3 @@
-//go:generate thrift --gen go echoservice.thrift
 package main
 
 import (
@@ -6,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"motus/goechoservice/gen-go/echoservice"
+	"motus/goechoservice/internal/thrifttools"
 	"motus/goechoservice/service"
 	"os"
 
@@ -21,60 +21,43 @@ var (
 
 func main() {
 	flag.Usage = func() {
-		fmt.Fprint(os.Stderr, "Usage of ", os.Args[0], ":\n")
+		fmt.Fprint(os.Stderr, "Usage of the echoservice", ":\n")
 		flag.PrintDefaults()
 		fmt.Fprint(os.Stderr, "\n")
 	}
 
 	flag.Parse()
 
-	var protocolFactory thrift.TProtocolFactory
-	switch *protocol {
-	case "compact":
-		protocolFactory = thrift.NewTCompactProtocolFactoryConf(nil)
-	case "simplejson":
-		protocolFactory = thrift.NewTSimpleJSONProtocolFactoryConf(nil)
-	case "json":
-		protocolFactory = thrift.NewTJSONProtocolFactory()
-	case "binary", "":
-		protocolFactory = thrift.NewTBinaryProtocolFactoryConf(nil)
-	default:
+	protocolFactory, err := thrifttools.BuildProtocolFactory(*protocol)
+	if err != nil {
 		fmt.Fprint(os.Stderr, "Invalid protocol specified", protocol, "\n")
 		flag.Usage()
 		os.Exit(1)
 	}
 
-	var transportFactory thrift.TTransportFactory
 	cfg := &thrift.TConfiguration{
 		TLSConfig: &tls.Config{
 			InsecureSkipVerify: true,
 		},
 	}
 
-	if *buffered {
-		transportFactory = thrift.NewTBufferedTransportFactory(8192)
-	} else {
-		transportFactory = thrift.NewTTransportFactory()
-	}
-
-	if *framed {
-		transportFactory = thrift.NewTFramedTransportFactoryConf(transportFactory, cfg)
-	}
-
-	if err := runServer(transportFactory, protocolFactory, *addr); err != nil {
-		fmt.Println("error running server:", err)
-	}
-}
-
-func runServer(transportFactory thrift.TTransportFactory, protocolFactory thrift.TProtocolFactory, addr string) error {
-	transport, err := thrift.NewTServerSocket(addr)
+	transportFactory, err := thrifttools.BuildTransportFactory(*buffered, *framed, cfg)
 	if err != nil {
-		return err
+		fmt.Fprint(os.Stderr, "Invalid transport specified", "\n")
+		os.Exit(1)
+	}
+
+	transport, err := thrift.NewTServerSocket(*addr)
+	if err != nil {
+		fmt.Fprint(os.Stderr, "Error building transport: "+err.Error(), "\n")
+		os.Exit(1)
 	}
 
 	processor := echoservice.NewEchoServiceProcessor(service.Echo{})
 	server := thrift.NewTSimpleServer4(processor, transport, transportFactory, protocolFactory)
 
-	fmt.Println("Starting the simple server... on ", addr)
-	return server.Serve()
+	fmt.Println("Starting the simple server... on ", *addr)
+	if err := server.Serve(); err != nil {
+		fmt.Println("error running server:", err)
+	}
 }
