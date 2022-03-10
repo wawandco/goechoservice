@@ -9,7 +9,7 @@ import (
 type Echo struct{}
 
 func (e Echo) Echo(ctx context.Context, input *echoservice.TEchoServiceInputDTO) (*echoservice.TEchoServiceOutputDTO, error) {
-	fmt.Printf("Received: %s\n", input.GetMessage())
+	fmt.Printf("[INFO] Received: %s\n", input.GetMessage())
 
 	result := echoservice.NewTEchoServiceOutputDTO()
 	result.EchoMessage = fmt.Sprintf("ACK from server: '%s'", input.Message)
