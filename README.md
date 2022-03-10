@@ -31,8 +31,8 @@ Responds with `polo` in plain text.
 
 #### `POST /thrift`
 Processes a Thrift request for the echo service in the binary protocol.
-#### GET /thrift/json
+#### `GET /thrift/json`
 Responds with `polo` in plain text.
 
-#### POST /thrift/json
+#### `POST /thrift/json`
 Processes a Thrift request for the echo service in the JSON protocol.
